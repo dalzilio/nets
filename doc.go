@@ -5,7 +5,6 @@
 // Package nets defines a concrete type for Time Petri Nets and provides a
 // Parser for building Nets from the textual description format used in the Tina
 // toolbox (see below).
-
 package nets
 
 // The net format

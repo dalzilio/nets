@@ -15,7 +15,7 @@ import (
 // This example shows the basic usage of the package: Parse a .net file and
 // output the result on the standard output. Note that we print the number of
 // places and transitions of the net, as a comment, but that we strip the
-// orginal comments found in the file.
+// original comments found in the file.
 func Example_basic() {
 	file, err := os.Open("testdata/demo.net")
 	if err != nil {
