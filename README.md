@@ -8,6 +8,10 @@ in the [manual pages for
 Tina](http://projects.laas.fr/tina/manuals/formats.html). The library also
 defines an exported struct (a concrete type) for Petri nets.
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/dalzilio/rudd)](https://goreportcard.com/report/github.com/dalzilio/nets)
+[![GoDoc](https://godoc.org/github.com/dalzilio/mcc?status.svg)](https://godoc.org/github.com/dalzilio/nets)
+[![Release](https://img.shields.io/github/v/release/dalzilio/rudd)](https://github.com/dalzilio/nets/releases)
+
 ## Installation
 
 ```bash
@@ -36,9 +40,9 @@ func main() {
 	if err != nil {
 		log.Fatal("parsing error: ", err)
 	}
-	fmt.Printf("net %s has %d transtions\n", net.Name, len(net.Tr))
+	fmt.Printf("net %s has %d transitions\n", net.Name, len(net.Tr))
 	// Output:
-	// net Sokoban has 452 transtions
+	// net Sokoban has 452 transitions
 }
 ```
 

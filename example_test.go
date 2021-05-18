@@ -53,7 +53,7 @@ func Example_countTransitions() {
 	if err != nil {
 		log.Fatal("parsing error: ", err)
 	}
-	fmt.Printf("net %s has %d transtions\n", net.Name, len(net.Tr))
+	fmt.Printf("net %s has %d transitions\n", net.Name, len(net.Tr))
 	// Output:
-	// net Sokoban has 452 transtions
+	// net Sokoban has 452 transitions
 }
