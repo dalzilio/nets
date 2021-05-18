@@ -9,8 +9,8 @@ Tina](http://projects.laas.fr/tina/manuals/formats.html). The library also
 defines an exported struct (a concrete type) for Petri nets.
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/dalzilio/nets)](https://goreportcard.com/report/github.com/dalzilio/nets)
-[![GoDoc](https://godoc.org/github.com/dalzilio/mcc?status.svg)](https://godoc.org/github.com/dalzilio/nets)
-[![Release](https://img.shields.io/github/v/release/dalzilio/rudd)](https://github.com/dalzilio/nets/releases)
+[![GoDoc](https://godoc.org/github.com/dalzilio/nets?status.svg)](https://godoc.org/github.com/dalzilio/nets)
+[![Release](https://img.shields.io/github/v/release/dalzilio/nets)](https://github.com/dalzilio/nets/releases)
 
 ## Installation
 
