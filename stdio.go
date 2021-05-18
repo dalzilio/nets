@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-func (net *Net) PrintTransition(cond, inhibcond, inpt, delta Marking) string {
+func (net *Net) printTransition(cond, inhibcond, inpt, delta Marking) string {
 	var left, right bytes.Buffer
 	for p, pname := range net.Pl {
 		inp := inpt.Get(p)
@@ -36,6 +36,7 @@ func (net *Net) PrintTransition(cond, inhibcond, inpt, delta Marking) string {
 	return fmt.Sprintf("%s ->%s\n", left.String(), right.String())
 }
 
+// String returns a textual representation of the net structure.
 func (net *Net) String() string {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "#\n# net %s\n", net.Name)
@@ -59,7 +60,7 @@ func (net *Net) String() string {
 		if !net.Time[k].trivial() {
 			buf.WriteString(net.Time[k].String())
 		}
-		buf.WriteString(net.PrintTransition(net.Cond[k],
+		buf.WriteString(net.printTransition(net.Cond[k],
 			net.Inhib[k],
 			net.Pre[k],
 			net.Delta[k]))
