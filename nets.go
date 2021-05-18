@@ -9,8 +9,8 @@ import (
 	"strconv"
 )
 
-// Net is the concrete type of Time Petri Nets. We support labels on transitions
-// but not on places.
+// Net is the concrete type of Time Petri Nets. We support labels on both
+// transitions and places.
 //
 // Conventions
 //
@@ -28,7 +28,7 @@ type Net struct {
 	Pre     []Marking      // The Pre (input places) condition for each transition.
 	Delta   []Marking      // The delta (Post - Pre) for each transition.
 	Initial Marking        // Initial marking of places.
-	Prio    [][]int        // Slice prio[i] lists the transitions with less priorities than Tr[i] (the slice is sorted).
+	Prio    [][]int        // the slice Prio[i] lists all transitions with less priority than Tr[i] (the slice is sorted).
 }
 
 // Marking is the type of Petri net markings. It is a set of Atoms (places index
@@ -64,7 +64,7 @@ const (
 // Bound is the type of bounds in a time interval.
 type Bound struct {
 	Bkind
-	int
+	Value int
 }
 
 // TimeInterval is the type of time intervals.
@@ -80,7 +80,7 @@ func (i *TimeInterval) trivial() bool {
 	if i.Left.Bkind != BCLOSE {
 		return false
 	}
-	if i.Left.int != 0 {
+	if i.Left.Value != 0 {
 		return false
 	}
 	return true
@@ -96,12 +96,12 @@ func (i *TimeInterval) String() string {
 	} else {
 		buf.WriteRune(']')
 	}
-	buf.WriteString(strconv.Itoa(int(i.Left.int)))
+	buf.WriteString(strconv.Itoa(int(i.Left.Value)))
 	buf.WriteRune(',')
 	if i.Right.Bkind == BINFTY {
 		buf.WriteString("w[")
 	} else {
-		buf.WriteString(strconv.Itoa(int(i.Right.int)))
+		buf.WriteString(strconv.Itoa(int(i.Right.Value)))
 		if i.Right.Bkind == BCLOSE {
 			buf.WriteRune(']')
 

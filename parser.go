@@ -151,15 +151,15 @@ func (p *parser) parseTR() error {
 			} else {
 				tgc.Left.Bkind = BOPEN
 			}
-			tgc.Left.int, err = strconv.Atoi(arr[1])
+			tgc.Left.Value, err = strconv.Atoi(arr[1])
 			if err != nil {
 				return fmt.Errorf(" in timing interval, %s at %s", tok.s, tok.pos.String())
 			}
 			if arr[2] == "w" {
 				tgc.Right.Bkind = BINFTY
 			} else {
-				tgc.Right.int, err = strconv.Atoi(arr[2])
-				if (err != nil) || (tgc.Right.int < tgc.Left.int) {
+				tgc.Right.Value, err = strconv.Atoi(arr[2])
+				if (err != nil) || (tgc.Right.Value < tgc.Left.Value) {
 					return fmt.Errorf(" in timing interval, %s at %s", tok.s, tok.pos.String())
 				}
 				if arr[3] == "[" {
