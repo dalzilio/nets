@@ -1,0 +1,15 @@
+tr t1 [0,1] p0 -> p1
+tr t0 : a [1,1] p0*3 -> p1
+tr t0 -> p4
+# Comments disappear. 
+tr t2 : {b s} [0,0] p1?-4K ->
+# Likewise for trivial time intervals
+tr t3 [0,w[ p2 ->
+pl p0 (16G)
+pl p2 (1)
+pl p4 : a
+pl p4 : b
+pr t3 > t2
+pr t3 > t1
+net demo
+

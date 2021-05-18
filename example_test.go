@@ -1,0 +1,46 @@
+// Copyright (c) 2021 Silvano DAL ZILIO
+//
+// GNU Affero GPL v3
+
+package nets_test
+
+import (
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/dalzilio/nets"
+)
+
+// This example shows the basic usage of the package: Parse a .net file and
+// output the result on the standard output. Note that we print the number of
+// places and transitions of the net, as a comment, but that we strip the
+// orginal comments found in the file.
+func Example_basic() {
+	file, err := os.Open("testdata/demo.net")
+	if err != nil {
+		log.Fatal("error opening file:", err)
+	}
+	defer file.Close()
+
+	net, err := nets.Parse(file)
+	if err != nil {
+		log.Fatal("parsing error: ", err)
+	}
+	fmt.Printf("%s", net)
+	// Output:
+	// #
+	// # net demo
+	// # 4 places, 4 transitions
+	// #
+	//
+	// pl p0 (16000000000)
+	// pl p1
+	// pl p4 : b
+	// pl p2 (1)
+	// tr t1 [0,1] p0 -> p1
+	// tr t0 : a  p0*3 -> p1 p4
+	// tr t2 : {b s} [0,0] p1?-4000 ->
+	// tr t3  p2 ->
+	// pr t3 > t1 t2
+}
