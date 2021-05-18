@@ -24,18 +24,21 @@ You can find some examples of code in the `*_test.go` files and some example of
 package main
 
 import (
-  "github.com/dalzilio/nets"
   "fmt"
+  "os"
+  
+  "github.com/dalzilio/nets"
 )
 
 func main() {
-   file, _ := os.Open("example.net")
-
-   net, err := nets.Parse(file)
-   if err != nil {
-      log.Fatal("parsing error: ", err)
-   }
-   fmt.Printf("net %s has %d transtions\n", net.Name, len(net.Tr))
+	file, _ := os.Open("testdata/sokoban_3.net")
+	net, err := nets.Parse(file)
+	if err != nil {
+		log.Fatal("parsing error: ", err)
+	}
+	fmt.Printf("net %s has %d transtions\n", net.Name, len(net.Tr))
+	// Output:
+	// net Sokoban has 452 transtions
 }
 ```
 

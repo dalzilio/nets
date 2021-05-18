@@ -44,3 +44,16 @@ func Example_basic() {
 	// tr t3  p2 ->
 	// pr t3 > t1 t2
 }
+
+// This example shows how to use the result of parsing a .net file to find the
+// number of transitions in a net.
+func Example_countTransitions() {
+	file, _ := os.Open("testdata/sokoban_3.net")
+	net, err := nets.Parse(file)
+	if err != nil {
+		log.Fatal("parsing error: ", err)
+	}
+	fmt.Printf("net %s has %d transtions\n", net.Name, len(net.Tr))
+	// Output:
+	// net Sokoban has 452 transtions
+}
