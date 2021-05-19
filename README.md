@@ -5,8 +5,11 @@ using the textual description format of the [Tina
 toolbox](http://projects.laas.fr/tina/). The format is defined in the section on
 [the .net format](http://projects.laas.fr/tina/manuals/formats.html#2) described
 in the [manual pages for
-Tina](http://projects.laas.fr/tina/manuals/formats.html). The library also
-defines an exported struct (a concrete type) for Petri nets.
+Tina](http://projects.laas.fr/tina/manuals/formats.html). 
+
+The library provides an exported type for dealing with Petri nets that can be
+useful to build new tools. We also provide methods to marshall a Net into a .net
+file or a PNML file for Place/Transition nets.
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/dalzilio/nets)](https://goreportcard.com/report/github.com/dalzilio/nets)
 [![GoDoc](https://godoc.org/github.com/dalzilio/nets?status.svg)](https://godoc.org/github.com/dalzilio/nets)

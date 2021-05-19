@@ -10,12 +10,21 @@ import (
 )
 
 // Net is the concrete type of Time Petri Nets. We support labels on both
-// transitions and places.
+// transitions and places. The semantics of nets is as follows:
 //
-// Conventions
+// • In a condition, Cond[k], an atom (p, m) entails that if transition Tr[k] is
+// enabled at a marking then marking[p] >= m.
 //
-//      - In a condition, an element (v, m) means p_v >= m
-//      - In a delta, an element (v, m) means p_v += m
+// • In a dual way, in the inhibition condition Inhib[k], if transition Tr[k] is
+// enabled at marking then marking[p] < Inhib[k].Get(p) or Inhib[k].Get(p) == 0.
+//
+// • The marking Pre[k] models the arcs from an "input" place to transition
+// Tr[k]. In a TPN, the value of Tr[k].Get(p) is the number of tokens that
+// "disappear" from an input place. This is useful when we need to check if a
+// (timed) transition is re-initialized.
+//
+// • An atom (p, m) in Delta[k] indicates that if Tr[k] fires then the marking
+// of place p must increase by m (in this case m can be negative).
 type Net struct {
 	Name    string         // Name of the net.
 	Pl      []string       // List of places names.
@@ -23,9 +32,9 @@ type Net struct {
 	Tlabel  []string       // List of transition labels. We use the empty string when no labels.
 	Plabel  []string       // List of place labels.
 	Time    []TimeInterval // List of (static) timing constraints for each transition.
-	Cond    []Marking      // Each transition has a list of conditions (for read arcs).
+	Cond    []Marking      // Each transition has a list of conditions.
 	Inhib   []Marking      // Each transition has inhibition conditions (possibly with capacities).
-	Pre     []Marking      // The Pre (input places) condition for each transition.
+	Pre     []Marking      // The Pre (input places) condition for each transition (only useful with read arcs in TPN).
 	Delta   []Marking      // The delta (Post - Pre) for each transition.
 	Initial Marking        // Initial marking of places.
 	Prio    [][]int        // the slice Prio[i] lists all transitions with less priority than Tr[i] (the slice is sorted).

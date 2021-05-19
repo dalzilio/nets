@@ -57,3 +57,13 @@ func Example_countTransitions() {
 	// Output:
 	// net Sokoban has 452 transitions
 }
+
+// This example shows how to output a Net into a PNML Place/Transition file.
+func Example_pnml() {
+	file, _ := os.Open("testdata/abp.net")
+	net, err := nets.Parse(file)
+	if err != nil {
+		log.Fatal("parsing error: ", err)
+	}
+	_ = net.Pnml(os.Stdout)
+}
