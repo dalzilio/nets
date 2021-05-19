@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 
-	"internal/pnml"
+	"github.com/dalzilio/nets/internal/pnml"
 )
 
 // madd returns a new Marking obtained by adding the multiplicities of the

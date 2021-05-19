@@ -30,6 +30,7 @@ type Net struct {
 	PAGE    Page   `xml:"page"`
 }
 
+// Page is the unit for defining a P/T net inside a PNML file.
 type Page struct {
 	ID     string  `xml:"id,attr"`
 	PLACES []Place `xml:"place"`
