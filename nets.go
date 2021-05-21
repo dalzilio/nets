@@ -145,6 +145,32 @@ func (m Marking) add(val int, mul int) Marking {
 	return append(m, Atom{val, mul})
 }
 
+// Add sets m to the (pointwise) sum of m1 and m2 and returns the resulting
+// marking. Therefore it is possible to compute the sum of two markings with the
+// expression &Marking{}.Add(m1,m2).
+func (m *Marking) Add(m1, m2 Marking) Marking {
+	*m = []Atom{}
+	k1, k2 := 0, 0
+	for {
+		switch {
+		case k1 == len(m1):
+			*m = append(*m, m2[k2:]...)
+		case k2 == len(m2):
+			*m = append(*m, m1[k1:]...)
+		case m1[k1].Pl == m2[k2].Pl:
+			*m = append(*m, Atom{Pl: m1[k1].Pl, Mult: m1[k1].Mult + m2[k2].Mult})
+			k1++
+			k2++
+		case m1[k1].Pl < m2[k2].Pl:
+			*m = append(*m, m1[k1])
+			k1++
+		default:
+			*m = append(*m, m1[k2])
+			k2++
+		}
+	}
+}
+
 // Get returns the multiplicity associated with value v. The returned
 // value is 0 if v is not in m.
 func (m Marking) Get(v int) int {
