@@ -10,21 +10,29 @@ import (
 )
 
 // Net is the concrete type of Time Petri Nets. We support labels on both
-// transitions and places. The semantics of nets is as follows:
+// transitions and places. The semantics of nets is as follows. Our choice
+// differs from the traditional semantics of TPN (based on Pre- and
+// Post-conditions), because we want to uniformly support inhibitor-arcs and
+// capacities.
 //
-// • In a condition, Cond[k], an atom (p, m) entails that if transition Tr[k] is
-// enabled at a marking then marking[p] >= m.
+// • COND: In a condition, Cond[k], an atom (p, m) entails that if transition
+// Tr[k] is enabled at marking M then M.Get(p) >= m. Therefore Tr[k] is enabled
+// at M when Compare(M, Cond[k]) >= 0 (for the pointwise comparison).
 //
-// • In a dual way, in the inhibition condition Inhib[k], if transition Tr[k] is
-// enabled at marking then marking[p] < Inhib[k].Get(p) or Inhib[k].Get(p) == 0.
+// • INHIB: In a dual way, in the inhibition condition Inhib[k], if transition
+// Tr[k] is enabled at marking M then M.Get(p) < Inhib[k].Get(p) or
+// Inhib[k].Get(p) == 0.
 //
-// • The marking Pre[k] models the arcs from an "input" place to transition
-// Tr[k]. In a TPN, the value of Tr[k].Get(p) is the number of tokens that
-// "disappear" from an input place. This is useful when we need to check if a
-// (timed) transition is re-initialized.
+// • PRE: The value of Pre[k] models the arcs from an "input" place to
+// transition Tr[k]. In a TPN, the value of Tr[k].Get(p) gives the tokens
+// "losts" from the input plac p. This is useful when we need to check if a
+// (timed) transition is re-initialized. Transition Tr[k2] is not re-initialized
+// at marking M, after firing Tr[k1], if Compare(Add(M, Pre[k2]), Cond[k1]) >= 0
+// (using pointwise operations).
 //
-// • An atom (p, m) in Delta[k] indicates that if Tr[k] fires then the marking
-// of place p must increase by m (in this case m can be negative).
+// • DELTA: An atom (p, m) in Delta[k] indicates that if Tr[k] fires then the
+// marking of place p must increase by m (in this case m can be negative). Hence
+// if we fire Tr[k] at marking M, the result is Add(M, Delta[k]).
 type Net struct {
 	Name    string         // Name of the net.
 	Pl      []string       // List of places names.
@@ -146,8 +154,7 @@ func (m Marking) add(val int, mul int) Marking {
 }
 
 // Add sets m to the (pointwise) sum of m1 and m2 and returns the resulting
-// marking. Therefore it is possible to compute the sum of two markings with the
-// expression &Marking{}.Add(m1,m2).
+// marking.
 func (m *Marking) Add(m1, m2 Marking) Marking {
 	*m = []Atom{}
 	k1, k2 := 0, 0
