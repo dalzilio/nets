@@ -288,3 +288,61 @@ func (m Marking) setiflower(val int, mul int) Marking {
 	}
 	return append(m, Atom{val, mul})
 }
+
+// PrioClosure updates the priority relation by computing its transitive
+// closure. We return an error if we have circular dependencies between
+// transitions.
+func (net *Net) PrioClosure() error {
+	// We keep a list/set of the transitions for which we have computed the
+	// closure and a work list of transitions we need to work with. Initially we
+	// start with all the transitions ti that do not appear in a relation ti >
+	// tj. Then we iterate going backward from this list, adding the transitions
+	// that have all their "successors" in the done list.
+	done := []int{}
+	work := []int{}
+	for k, v := range net.Prio {
+		if len(v) == 0 {
+			done = setAdd(done, k)
+		} else {
+			work = setAdd(work, k)
+		}
+	}
+	if len(done) == len(net.Tr) {
+		// the priority list of all transitions is empty; so we have no
+		// priorities at all
+		return nil
+	}
+	if len(work) == 0 {
+		return fmt.Errorf("problem with priorities, no minimal elements")
+	}
+	for {
+		if len(work) == 0 {
+			return nil
+		}
+		workn := []int{}
+		donen := make([]int, len(done))
+		copy(donen, done)
+		for _, t := range work {
+			if setIncluded(net.Prio[t], done) {
+				for _, v := range net.Prio[t] {
+					net.Prio[t] = setUnion(net.Prio[t], net.Prio[v])
+				}
+				donen = setAdd(donen, t)
+			} else {
+				workn = setAdd(workn, t)
+			}
+		}
+		// The length of work should decrease  at each loop, otherwise it means
+		// we have a circular dependency
+		if len(workn) == len(work) {
+			for _, t := range work {
+				if setMember(net.Prio[t], t) >= 0 {
+					return fmt.Errorf("cyclic dependencies in priority for %s", net.Tr[t])
+				}
+			}
+			return fmt.Errorf("cyclic dependencies between priorities")
+		}
+		work = workn
+		done = donen
+	}
+}

@@ -6,6 +6,7 @@ pl p4 : b t4 -> t5 t6?1
 tr t2 : {b s} [0,0] p1?-4K ->
 tr t3 [0,w[ p2 ->
 pl p2 (1)
+pr t0 < t1
 pr t3 t6 > t2 t1
 net demo
 

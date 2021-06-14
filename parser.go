@@ -429,6 +429,42 @@ func setUnion(s1, s2 []int) []int {
 	return res
 }
 
+// setIncluded returns true if all the elements in slice s1 are also in s2. This
+// is equivalent to len(s1) == len(Intersection(s1,s2)) but does not need to
+// allocate memory.
+func setIncluded(s1, s2 []int) bool {
+	i1, i2 := 0, 0
+	for {
+		switch {
+		case i1 == len(s1):
+			return true
+		case i2 == len(s2):
+			return false
+		case s1[i1] == s2[i2]:
+			i1++
+			i2++
+		case s1[i1] < s2[i2]:
+			return false
+		case s1[i1] > s2[i2]:
+			i2++
+		}
+	}
+}
+
+// setMember returns the index in s at which element v occurs, or -1 if v does not
+// appear in s.
+func setMember(s []int, v int) int {
+	for k, i := range s {
+		if i == v {
+			return k
+		}
+		if i > v {
+			return -1
+		}
+	}
+	return -1
+}
+
 // mconvert is used to convert values found on markings and weights into
 // integers. We take into account the possibility that s ends with a
 // "multiplier", such as `3K` (3000), which is valid in Tina.

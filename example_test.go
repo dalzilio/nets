@@ -13,9 +13,10 @@ import (
 )
 
 // This example shows the basic usage of the package: Parse a .net file and
-// output the result on the standard output. Note that we print the number of
-// places and transitions of the net, as a comment, but that we strip the
-// original comments found in the file.
+// output the result on the standard output. Since the net has priorities, we
+// also compute the transitive closure of its priority relation (a call to
+// PrioClosure). Note that we print the number of places and transitions of the
+// net, as a comment, but that we strip the original comments found in the file.
 func Example_basic() {
 	file, err := os.Open("testdata/demo.net")
 	if err != nil {
@@ -26,6 +27,9 @@ func Example_basic() {
 	net, err := nets.Parse(file)
 	if err != nil {
 		log.Fatal("parsing error: ", err)
+	}
+	if err := net.PrioClosure(); err != nil {
+		log.Fatal("error with priorities: ", err)
 	}
 	fmt.Printf("%s", net)
 	// Output:
@@ -45,8 +49,9 @@ func Example_basic() {
 	// tr t4  -> p4
 	// tr t6  p4?1 ->
 	// tr t2 : {b s} [0,0] p1?-4000 ->
-	// pr t3 > t1 t2
-	// pr t6 > t1 t2
+	// pr t1 > t0
+	// pr t3 > t1 t0 t2
+	// pr t6 > t1 t0 t2
 }
 
 // This example shows how to use the result of parsing a .net file to find the
