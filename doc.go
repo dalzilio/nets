@@ -31,12 +31,14 @@ Grammar
     .net                    ::= (<trdesc>|<pldesc>|<lbdesc>|<prdesc>|<ntdesc>|<netdesc>)*
     netdesc                 ::= ’net’ <net>
     trdesc                  ::= ’tr’ <transition> {":" <label>} {<interval>} {<tinput> -> <toutput>}
-    pldesc                  ::= ’pl’ <place> {":" <label>} {(<marking>)}
+    pldesc                  ::= ’pl’ <place> {":" <label>} {(<marking>)} {<pinput> -> <poutput>}
     ntdesc                  ::= ’nt’ <note> (’0’|’1’) <annotation>
     prdesc                  ::= ’pr’ (<transition>)+ ("<"|">") (<transition>)+
     interval                ::= (’[’|’]’)INT’,’INT(’[’|’]’) | (’[’|’]’)INT’,’w[’
     tinput                  ::= <place>{<arc>}
     toutput                 ::= <place>{<normal_arc>}
+    pinput                  ::= <transition>{<normal_arc>}
+    poutput                 ::= <transition>{arc}
     arc                     ::= <normal_arc> | <test_arc> | <inhibitor_arc> |
                                 <stopwatch_arc> | <stopwatch-inhibitor_arc>
     normal_arc              ::= ’*’<weight>
@@ -67,6 +69,12 @@ By default: transitions have temporal interval [0,w[; normal arcs have weight 1;
 places have marking 0; and transitions have the empty label "{}"
 
 When several labels are assigned to some node, only the last assigned is kept.
+
+When a transition is associated with several timing intervals, we keep the
+intersection of all the intervals (the result must not be empty).
+
+It is also possible to list transitions associated with a place, in a pl
+declaration. Arcs defined in this way are added to the respective transitions.
 
 Simple example of .net file
 
