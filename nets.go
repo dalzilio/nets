@@ -6,6 +6,7 @@ package nets
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 )
 
@@ -89,8 +90,13 @@ type TimeInterval struct {
 	Left, Right Bound
 }
 
-// trivial is true if the time interval i is of the form [0, w[.
+// trivial is true if the time interval i is of the form [0, w[ or if the
+// interval is un-initialized (meaning the left part of the interval is of kind
+// BINFTY)
 func (i *TimeInterval) trivial() bool {
+	if i.Left.Bkind == BINFTY {
+		return true
+	}
 	if i.Right.Bkind != BINFTY {
 		return false
 	}
@@ -103,10 +109,55 @@ func (i *TimeInterval) trivial() bool {
 	return true
 }
 
+// intersectWith sets interval i to the intersection of  i and j. We return an
+// error if the intersection is empty.
+func (i *TimeInterval) intersectWith(j TimeInterval) error {
+	if i.Left.Bkind == BINFTY {
+		// it means we are initializing the interval
+		i.Left.Bkind = j.Left.Bkind
+		i.Left.Value = j.Left.Value
+		i.Right.Bkind = j.Right.Bkind
+		i.Right.Value = j.Right.Value
+	}
+	if j.Left.Bkind == BINFTY {
+		return fmt.Errorf("bad time interval when computing intersection")
+	}
+	// we compute the max of the left parts
+	if j.Left.Value >= i.Left.Value {
+		if j.Left.Value > i.Left.Value || (j.Left.Value == i.Left.Value && j.Left.Bkind == BOPEN) {
+			// we update the left part
+			i.Left.Bkind = j.Left.Bkind
+			i.Left.Value = j.Left.Value
+		}
+	}
+	if j.Right.Bkind == BINFTY {
+		// we do not need to update the right part
+		return nil
+	}
+	if i.Right.Bkind == BINFTY {
+		i.Right.Bkind = j.Right.Bkind
+		i.Right.Value = j.Right.Value
+		return nil
+	}
+	// when both intervals are right-bounded we take the min of their right parts
+	if j.Right.Value <= i.Right.Value {
+		if j.Right.Value < i.Right.Value || (j.Right.Value == i.Right.Value && j.Right.Bkind == BOPEN) {
+			i.Right.Bkind = j.Right.Bkind
+			i.Right.Value = j.Right.Value
+		}
+	}
+	// we need to test if the result is empty
+	if i.Right.Value < i.Left.Value || (i.Right.Value == i.Left.Value && (i.Left.Bkind == BOPEN || i.Right.Bkind == BOPEN)) {
+		return fmt.Errorf("empty time interval when computing intersection")
+	}
+	return nil
+}
+
 func (i *TimeInterval) String() string {
 	var buf bytes.Buffer
 	if i.Left.Bkind == BINFTY {
-		return "[void]"
+		// it means interval was never set
+		return "[0,w["
 	}
 	if i.Left.Bkind == BCLOSE {
 		buf.WriteRune('[')
@@ -153,26 +204,29 @@ func (m Marking) add(val int, mul int) Marking {
 	return append(m, Atom{val, mul})
 }
 
-// Add sets m to the (pointwise) sum of m1 and m2 and returns the resulting
-// marking.
-func (m *Marking) Add(m1, m2 Marking) Marking {
-	*m = []Atom{}
+// Add returns the pointwise sum of m1 and m2.
+func Add(m1, m2 Marking) Marking {
+	res := []Atom{}
 	k1, k2 := 0, 0
 	for {
 		switch {
 		case k1 == len(m1):
-			*m = append(*m, m2[k2:]...)
+			res = append(res, m2[k2:]...)
+			return res
 		case k2 == len(m2):
-			*m = append(*m, m1[k1:]...)
+			res = append(res, m1[k1:]...)
+			return res
 		case m1[k1].Pl == m2[k2].Pl:
-			*m = append(*m, Atom{Pl: m1[k1].Pl, Mult: m1[k1].Mult + m2[k2].Mult})
+			if mult := m1[k1].Mult + m2[k2].Mult; mult != 0 {
+				res = append(res, Atom{Pl: m1[k1].Pl, Mult: mult})
+			}
 			k1++
 			k2++
 		case m1[k1].Pl < m2[k2].Pl:
-			*m = append(*m, m1[k1])
+			res = append(res, m1[k1])
 			k1++
 		default:
-			*m = append(*m, m1[k2])
+			res = append(res, m2[k2])
 			k2++
 		}
 	}

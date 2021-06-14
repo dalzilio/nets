@@ -31,15 +31,16 @@ func Example_basic() {
 	// Output:
 	// #
 	// # net demo
-	// # 4 places, 4 transitions
+	// # 4 places, 5 transitions
 	// #
 	//
-	// pl p0 (16000000000)
+	// pl p0
 	// pl p1
 	// pl p4 : b
 	// pl p2 (1)
 	// tr t1 [0,1] p0 -> p1
-	// tr t0 : a  p0*3 -> p1 p4
+	// tr t0 : a ]2,3[ p0*3 -> p1 p4
+	// tr t5 : {\{a\}}  -> p0
 	// tr t2 : {b s} [0,0] p1?-4000 ->
 	// tr t3  p2 ->
 	// pr t3 > t1 t2

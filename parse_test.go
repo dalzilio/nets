@@ -15,7 +15,7 @@ func TestParse(t *testing.T) {
 		pl, tr int
 	}{
 		{"abp.net", 12, 16},
-		{"demo.net", 4, 4},
+		{"demo.net", 4, 5},
 		{"ifip.net", 5, 5},
 		{"sokoban_3.net", 410, 452},
 	}

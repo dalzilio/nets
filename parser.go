@@ -134,17 +134,30 @@ func (p *parser) parseTR() error {
 		return fmt.Errorf(" found %q, expected valid transition name at %s", tok.s, tok.pos.String())
 	}
 	index := p.checkTR(tok.s)
-	p.net.Time[index] = TimeInterval{Bound{BCLOSE, 0}, Bound{BINFTY, 0}}
+	// we shouldcheck for an (optional) label then (also optional) time
+	// interval, in this order.
+	//    ’tr’ <transition> {":" <label>} {<interval>} {<tinput> -> <toutput>}
 	afterArrow := false
+	haslabel := false
+	hastinterval := false
+	hasarcs := false
 	for {
 		switch tok := p.scan(); tok.tok {
 		case tokLABEL:
+			if haslabel || hastinterval || hasarcs {
+				return fmt.Errorf(" bad label declaration, at %s", tok.pos.String())
+			}
+			haslabel = true // to avoid double label decl
 			p.net.Tlabel[index] = tok.s
 		case tokTIMINGC:
+			if hastinterval || hasarcs {
+				return fmt.Errorf(" bad time interval declaration, at %s", tok.pos.String())
+			}
+			hastinterval = true // to avoid double time interval decl
 			tgc := TimeInterval{}
 			arr := strings.Fields(tok.s)
 			if len(arr) != 4 {
-				return fmt.Errorf(" in timing interval, %s at %s", tok.s, tok.pos.String())
+				return fmt.Errorf(" bad time interval declaration, %s at %s", tok.s, tok.pos.String())
 			}
 			if arr[0] == "[" {
 				tgc.Left.Bkind = BCLOSE
@@ -168,22 +181,35 @@ func (p *parser) parseTR() error {
 					tgc.Right.Bkind = BCLOSE
 				}
 			}
-			p.net.Time[index] = tgc
+			if err := p.net.Time[index].intersectWith(tgc); err != nil {
+				return fmt.Errorf(" %s: for transition %s, at %s", err, p.net.Tr[index], tok.pos.String())
+			}
 		case tokARROW:
+			if afterArrow {
+				return fmt.Errorf(" cannot have two arrows (->) in tr declaration at %s", tok.pos.String())
+			}
+			hasarcs = true // to avoid label and time interval decl after declaring arcs
 			afterArrow = true
 		case tokIDENT:
 			pindex := p.checkPL(tok.s)
+			hasarcs = true
 			tok = p.scan()
 			mult := 1
 			ok := false
 			switch tok.tok {
 			case tokREAD:
+				if afterArrow {
+					return fmt.Errorf(" read arcs in outputs of transition at %s", tok.pos.String())
+				}
 				mult, err = mconvert(tok.s)
 				if err != nil {
 					return fmt.Errorf(" in multiplicity, %s (%s) at %s", tok.s, err, tok.pos.String())
 				}
 				p.net.Cond[index] = p.net.Cond[index].setifbigger(pindex, mult)
 			case tokINHIBITOR:
+				if afterArrow {
+					return fmt.Errorf(" inhibitor arcs in outputs of transition at %s", tok.pos.String())
+				}
 				mult, err = mconvert(tok.s)
 				if err != nil {
 					return fmt.Errorf(" in multiplicity, %s (%s) at %s", tok.s, err, tok.pos.String())

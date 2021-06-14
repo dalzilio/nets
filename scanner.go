@@ -158,14 +158,28 @@ func (s *scanner) scanLabel() token {
 		ch = s.read()
 	}
 
-	if ch == eof {
-		return s.position(tokILLEGAL, "EOF")
+	if ch == eof || ch == '}' || ch == '\\' {
+		return s.position(tokILLEGAL, string(ch))
 	}
 
 	if ch == '{' {
+		// we accept any chain between braces, and in which characters {, }, and \ are prefixed by \
 		buf.WriteRune('{')
 		for ch != '}' {
 			ch = s.read()
+			if ch == eof || ch == '\n' || ch == '\r' {
+				return s.position(tokILLEGAL, buf.String())
+			}
+			if ch == '\\' {
+				buf.WriteRune(ch)
+				// we possibly have an escaped character
+				ch = s.read()
+				buf.WriteRune(ch)
+				if ch != '{' && ch != '}' && ch != '\\' {
+					return s.position(tokILLEGAL, buf.String())
+				}
+				ch = s.read()
+			}
 			buf.WriteRune(ch)
 		}
 		return s.position(tokLABEL, buf.String())
@@ -207,10 +221,30 @@ func (s *scanner) scanIdent() token {
 	// Read every subsequent ident character into the buffer. Non-ident
 	// characters, like EOF, will cause the loop to exit. If escaped we return
 	// the identfier until the closing '}'
+
+	if ch == '}' {
+		buf.WriteRune(ch)
+		return s.position(tokILLEGAL, buf.String())
+	}
+
 	if ch == '{' {
+		// we accept any chain between braces, and in which characters {, }, and \ are prefixed by \
 		buf.WriteRune('{')
 		for ch != '}' {
 			ch = s.read()
+			if ch == eof || ch == '\n' || ch == '\r' {
+				return s.position(tokILLEGAL, buf.String())
+			}
+			if ch == '\\' {
+				buf.WriteRune(ch)
+				// we possibly have an escaped character
+				ch = s.read()
+				buf.WriteRune(ch)
+				if ch != '{' && ch != '}' && ch != '\\' {
+					return s.position(tokILLEGAL, buf.String())
+				}
+				ch = s.read()
+			}
 			buf.WriteRune(ch)
 		}
 		return s.position(tokIDENT, buf.String())
