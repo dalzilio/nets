@@ -31,7 +31,7 @@ func Example_basic() {
 	// Output:
 	// #
 	// # net demo
-	// # 4 places, 5 transitions
+	// # 4 places, 7 transitions
 	// #
 	//
 	// pl p0
@@ -40,10 +40,13 @@ func Example_basic() {
 	// pl p2 (1)
 	// tr t1 [0,1] p0 -> p1
 	// tr t0 : a ]2,3[ p0*3 -> p1 p4
-	// tr t5 : {\{a\}}  -> p0
-	// tr t2 : {b s} [0,0] p1?-4000 ->
 	// tr t3  p2 ->
+	// tr t5 : {\{a\}}  p4 -> p0
+	// tr t4  -> p4
+	// tr t6  p4?1 ->
+	// tr t2 : {b s} [0,0] p1?-4000 ->
 	// pr t3 > t1 t2
+	// pr t6 > t1 t2
 }
 
 // This example shows how to use the result of parsing a .net file to find the

@@ -191,6 +191,8 @@ func (p *parser) parseTR() error {
 			hasarcs = true // to avoid label and time interval decl after declaring arcs
 			afterArrow = true
 		case tokIDENT:
+			// tinput  ::= <place>{<arc>}
+			// toutput ::= <place>{<normal_arc>}
 			pindex := p.checkPL(tok.s)
 			hasarcs = true
 			tok = p.scan()
@@ -245,26 +247,96 @@ func (p *parser) parseTR() error {
 }
 
 func (p *parser) parsePL() error {
+	//   pldesc ::= ’pl’ <place> {":" <label>} {(<marking>)} {<pinput> -> <poutput>}
+	var err error
 	tok := p.scan()
 	if tok.tok != tokIDENT {
 		return fmt.Errorf(" found %q, expected valid place name at %s", tok.s, tok.pos.String())
 	}
 	index := p.checkPL(tok.s)
-	tok = p.scan()
-	if tok.tok == tokLABEL {
-		p.net.Plabel[index] = tok.s
-		tok = p.scan()
-	}
-	if tok.tok == tokMARKING {
-		plm, err := mconvert(tok.s)
-		if err != nil {
-			return fmt.Errorf(" in marking, %s (%s) at %s", tok.s, err, tok.pos.String())
+	afterArrow := false // in case we have tr declarations
+	haslabel := false
+	hasinitm := false
+	hasarcs := false
+	for {
+		switch tok := p.scan(); tok.tok {
+		case tokLABEL:
+			if haslabel || hasinitm || hasarcs {
+				return fmt.Errorf(" bad label declaration, at %s", tok.pos.String())
+			}
+			haslabel = true
+			p.net.Plabel[index] = tok.s
+		case tokMARKING:
+			if hasinitm || hasarcs {
+				return fmt.Errorf(" bad marking declaration, at %s", tok.pos.String())
+			}
+			plm, err := mconvert(tok.s)
+			if err != nil {
+				return fmt.Errorf(" in marking, %s (%s) at %s", tok.s, err, tok.pos.String())
+			}
+			hasinitm = true
+			p.net.Initial = p.net.Initial.add(index, plm)
+		case tokARROW:
+			if afterArrow {
+				return fmt.Errorf(" cannot have two arrows (->) in pl declaration at %s", tok.pos.String())
+			}
+			hasarcs = true // to avoid label and time interval decl after declaring arcs
+			afterArrow = true
+		case tokIDENT:
+			// then tok.s is the name of a transition
+			//    pinput  ::= <transition>{<normal_arc>}
+			//    poutput ::= <transition>{arc}
+			tindex := p.checkTR(tok.s)
+			hasarcs = true
+			tok = p.scan()
+			mult := 1
+			ok := false
+			switch tok.tok {
+			case tokREAD:
+				if !afterArrow {
+					return fmt.Errorf(" read arcs in inputs of place, at %s", tok.pos.String())
+				}
+				mult, err = mconvert(tok.s)
+				if err != nil {
+					return fmt.Errorf(" in multiplicity, %s (%s) at %s", tok.s, err, tok.pos.String())
+				}
+				p.net.Cond[tindex] = p.net.Cond[tindex].setifbigger(index, mult)
+			case tokINHIBITOR:
+				if !afterArrow {
+					return fmt.Errorf(" inhibitor arcs in inputs of place at %s", tok.pos.String())
+				}
+				mult, err = mconvert(tok.s)
+				if err != nil {
+					return fmt.Errorf(" in multiplicity, %s (%s) at %s", tok.s, err, tok.pos.String())
+				}
+				p.net.Inhib[tindex] = p.net.Inhib[tindex].setiflower(index, mult)
+			case tokSTAR:
+				mult, err = mconvert(tok.s)
+				if err != nil {
+					return fmt.Errorf(" in multiplicity, %s (%s) at %s", tok.s, err, tok.pos.String())
+				}
+				ok = true
+				fallthrough
+			default:
+				if !ok {
+					// it means that we did not fallthrough the previous case
+					// (we have a normal arc, witout a '?' or '*' decoration)
+					// and we need to pop back the extra token that we scanned
+					p.unscan()
+				}
+				if afterArrow {
+					p.net.Delta[tindex] = p.net.Delta[tindex].add(index, -mult)
+					p.net.Pre[tindex] = p.net.Pre[tindex].add(index, -mult)
+					p.net.Cond[tindex] = p.net.Cond[tindex].add(index, mult)
+				} else {
+					p.net.Delta[tindex] = p.net.Delta[tindex].add(index, mult)
+				}
+			}
+		default:
+			p.unscan()
+			return nil
 		}
-		p.net.Initial = p.net.Initial.add(index, plm)
-	} else {
-		p.unscan()
 	}
-	return nil
 }
 
 func (p *parser) parseNOTE() error {
@@ -292,10 +364,7 @@ func (p *parser) parsePRIO() error {
 		if tok.tok != tokIDENT {
 			break
 		}
-		n, ok := p.tr[tok.s]
-		if !ok {
-			return fmt.Errorf("found %q, expected valid transition identifier at %s", tok.s, tok.pos.String())
-		}
+		n := p.checkTR(tok.s)
 		pre = setAdd(pre, n)
 	}
 	if tok.tok != tokGT && tok.tok != tokLT {
@@ -321,10 +390,7 @@ func (p *parser) parsePRIO() error {
 			p.unscan()
 			return nil
 		}
-		n, ok := p.tr[tok.s]
-		if !ok {
-			return fmt.Errorf("found %q, expected valid transition identifier at %s", tok.s, tok.pos.String())
-		}
+		n := p.checkTR(tok.s)
 		post = setAdd(post, n)
 	}
 }
