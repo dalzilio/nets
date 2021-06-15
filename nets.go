@@ -312,7 +312,7 @@ func (net *Net) PrioClosure() error {
 		// priorities at all
 		return nil
 	}
-	if len(work) == 0 {
+	if len(done) == 0 {
 		return fmt.Errorf("problem with priorities, no minimal elements")
 	}
 	for {
