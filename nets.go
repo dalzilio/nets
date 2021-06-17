@@ -154,11 +154,11 @@ func (i *TimeInterval) intersectWith(j TimeInterval) error {
 }
 
 func (i *TimeInterval) String() string {
-	var buf bytes.Buffer
 	if i.Left.Bkind == BINFTY {
 		// it means interval was never set
 		return "[0,w["
 	}
+	var buf bytes.Buffer
 	if i.Left.Bkind == BCLOSE {
 		buf.WriteRune('[')
 	} else {

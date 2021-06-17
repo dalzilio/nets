@@ -10,10 +10,12 @@ import (
 	"strings"
 )
 
-// scanner adds a position field for easy error reporting
+// scanner adds a position field for easy error reporting. We also include a
+// bytes buffer that is reused between scanning methods.
 type scanner struct {
 	r   *bufio.Reader
 	pos *textPos
+	buf bytes.Buffer
 }
 
 // read reads the next rune from the bufferred reader.
@@ -101,20 +103,20 @@ func (s *scanner) scanTimingConstraint() token {
 	// Skip every character until a closing bracket
 	// and returns a white-space separated list of Bounds
 	ch := s.read()
-	var buf bytes.Buffer
-	buf.WriteRune(ch)
-	buf.WriteRune(' ')
+	s.buf.Reset()
+	s.buf.WriteRune(ch)
+	s.buf.WriteRune(' ')
 	for {
 		ch = s.read()
 		switch {
 		case (ch == '[') || (ch == ']'):
-			buf.WriteRune(' ')
-			buf.WriteRune(ch)
-			return s.position(tokTIMINGC, buf.String())
+			s.buf.WriteRune(' ')
+			s.buf.WriteRune(ch)
+			return s.position(tokTIMINGC, s.buf.String())
 		case ch == ',':
-			buf.WriteRune(' ')
+			s.buf.WriteRune(' ')
 		case isDigit(ch) || (ch == 'w'):
-			buf.WriteRune(ch)
+			s.buf.WriteRune(ch)
 		case isWhitespace(ch):
 		default:
 			return s.position(tokILLEGAL, string(ch))
@@ -151,7 +153,7 @@ func (s *scanner) scanArc(r rune) token {
 
 func (s *scanner) scanLabel() token {
 	// Create a buffer and read the current character into it.
-	var buf bytes.Buffer
+	s.buf.Reset()
 
 	ch := s.read()
 	for isWhitespace(ch) {
@@ -164,25 +166,25 @@ func (s *scanner) scanLabel() token {
 
 	if ch == '{' {
 		// we accept any chain between braces, and in which characters {, }, and \ are prefixed by \
-		buf.WriteRune('{')
+		s.buf.WriteRune('{')
 		for ch != '}' {
 			ch = s.read()
 			if ch == eof || ch == '\n' || ch == '\r' {
-				return s.position(tokILLEGAL, buf.String())
+				return s.position(tokILLEGAL, s.buf.String())
 			}
 			if ch == '\\' {
-				buf.WriteRune(ch)
+				s.buf.WriteRune(ch)
 				// we possibly have an escaped character
 				ch = s.read()
-				buf.WriteRune(ch)
+				s.buf.WriteRune(ch)
 				if ch != '{' && ch != '}' && ch != '\\' {
-					return s.position(tokILLEGAL, buf.String())
+					return s.position(tokILLEGAL, s.buf.String())
 				}
 				ch = s.read()
 			}
-			buf.WriteRune(ch)
+			s.buf.WriteRune(ch)
 		}
-		return s.position(tokLABEL, buf.String())
+		return s.position(tokLABEL, s.buf.String())
 	}
 
 	// Read every subsequent ident character into the buffer.
@@ -192,11 +194,11 @@ func (s *scanner) scanLabel() token {
 		switch {
 		case isWhitespace(ch):
 			s.unread()
-			return s.position(tokLABEL, buf.String())
+			return s.position(tokLABEL, s.buf.String())
 		case ch == eof:
 			return s.position(tokILLEGAL, "EOF")
 		default:
-			buf.WriteRune(ch)
+			s.buf.WriteRune(ch)
 		}
 		ch = s.read()
 	}
@@ -215,7 +217,7 @@ func (s *scanner) scanMarking() token {
 
 func (s *scanner) scanIdent() token {
 	// Create a buffer and read the current character into it.
-	var buf bytes.Buffer
+	s.buf.Reset()
 	ch := s.read()
 
 	// Read every subsequent ident character into the buffer. Non-ident
@@ -223,40 +225,40 @@ func (s *scanner) scanIdent() token {
 	// the identfier until the closing '}'
 
 	if ch == '}' {
-		buf.WriteRune(ch)
-		return s.position(tokILLEGAL, buf.String())
+		s.buf.WriteRune(ch)
+		return s.position(tokILLEGAL, s.buf.String())
 	}
 
 	if ch == '{' {
 		// we accept any chain between braces, and in which characters {, }, and \ are prefixed by \
-		buf.WriteRune('{')
+		s.buf.WriteRune('{')
 		for ch != '}' {
 			ch = s.read()
 			if ch == eof || ch == '\n' || ch == '\r' {
-				return s.position(tokILLEGAL, buf.String())
+				return s.position(tokILLEGAL, s.buf.String())
 			}
 			if ch == '\\' {
-				buf.WriteRune(ch)
+				s.buf.WriteRune(ch)
 				// we possibly have an escaped character
 				ch = s.read()
-				buf.WriteRune(ch)
+				s.buf.WriteRune(ch)
 				if ch != '{' && ch != '}' && ch != '\\' {
-					return s.position(tokILLEGAL, buf.String())
+					return s.position(tokILLEGAL, s.buf.String())
 				}
 				ch = s.read()
 			}
-			buf.WriteRune(ch)
+			s.buf.WriteRune(ch)
 		}
-		return s.position(tokIDENT, buf.String())
+		return s.position(tokIDENT, s.buf.String())
 	}
 
 	// otherwise read the identifier and match it against reserved word
 	for isLetter(ch) || isDigit(ch) || isIdentChar(ch) {
-		buf.WriteRune(ch)
+		s.buf.WriteRune(ch)
 		ch = s.read()
 	}
 	s.unread()
-	switch strings.ToUpper(buf.String()) {
+	switch strings.ToUpper(s.buf.String()) {
 	case "TR":
 		return s.position(tokTR, "tr")
 	case "NET":
@@ -270,26 +272,26 @@ func (s *scanner) scanIdent() token {
 	}
 
 	// If not reserved then return as a regular identifier.
-	return s.position(tokIDENT, buf.String())
+	return s.position(tokIDENT, s.buf.String())
 }
 
 // scanNumber scan the input for digits and return the resulting number as a
 // string. The value of c is either 0 or the first digit of the result
 func (s *scanner) scanNumber(c rune) string {
 	// Create a buffer and read the current character into it.
-	var buf bytes.Buffer
+	s.buf.Reset()
 	if c != 0 {
-		buf.WriteRune(c)
+		s.buf.WriteRune(c)
 	}
 	ch := s.read()
 	for isDigit(ch) {
-		buf.WriteRune(ch)
+		s.buf.WriteRune(ch)
 		ch = s.read()
 	}
 	if ch == 'K' || ch == 'M' || ch == 'G' || ch == 'T' || ch == 'P' || ch == 'E' {
-		buf.WriteRune(ch)
-		return buf.String()
+		s.buf.WriteRune(ch)
+		return s.buf.String()
 	}
 	s.unread()
-	return buf.String()
+	return s.buf.String()
 }
