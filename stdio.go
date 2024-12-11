@@ -8,7 +8,22 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strconv"
 )
+
+// Mtoa converts a marking into a string
+func (net *Net) Mtoa(m Marking) string {
+	var buf bytes.Buffer
+	for _, v := range m {
+		buf.WriteString(net.Pl[v.Pl])
+		if v.Mult != 1 {
+			buf.WriteRune('*')
+			buf.WriteString(strconv.Itoa(int(v.Mult)))
+		}
+		buf.WriteRune(' ')
+	}
+	return buf.String()
+}
 
 func (net *Net) printTransition(cond, inhibcond, inpt, delta Marking) string {
 	var left, right bytes.Buffer

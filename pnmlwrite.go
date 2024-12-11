@@ -11,33 +11,6 @@ import (
 	"github.com/dalzilio/nets/internal/pnml"
 )
 
-// madd returns a new Marking obtained by adding the multiplicities of the
-// element in m1 and m2.
-func madd(m1, m2 Marking) Marking {
-	i1, i2 := 0, 0
-	m := Marking{}
-	for {
-		switch {
-		case i1 == len(m1):
-			return append(m, m2[i2:]...)
-		case i2 == len(m2):
-			return append(m, m1[i1:]...)
-		case m1[i1].Pl == m2[i2].Pl:
-			if sum := m1[i1].Mult + m2[i2].Mult; sum != 0 {
-				m = append(m, Atom{m1[i1].Pl, sum})
-			}
-			i1++
-			i2++
-		case m1[i1].Pl < m2[i2].Pl:
-			m = append(m, m1[i1])
-			i1++
-		case m2[i2].Pl < m1[i1].Pl:
-			m = append(m, m2[i2])
-			i2++
-		}
-	}
-}
-
 // Pnml marshall a Net into a P/T net in PNML format and writes the output on an
 // io.Writer. Because of limitations in the PNML format, we return an error if
 // the net has inhibitor arcs. We also drop timing information on transitions
@@ -63,7 +36,7 @@ func (net *Net) Pnml(w io.Writer) error {
 		places[k] = pnml.Place{
 			Name:  v,
 			Label: net.Plabel[k],
-			Init:  net.Initial.Get(k),
+			Init:  int(net.Initial.Get(k)),
 		}
 	}
 	for k, v := range net.Tr {
@@ -75,11 +48,11 @@ func (net *Net) Pnml(w io.Writer) error {
 		}
 		pre := net.Cond[k]
 		for _, m := range pre {
-			trans[k].In = append(trans[k].In, pnml.Arc{Place: &places[m.Pl], Mult: m.Mult})
+			trans[k].In = append(trans[k].In, pnml.Arc{Place: &places[m.Pl], Mult: int(m.Mult)})
 		}
-		post := madd(pre, net.Delta[k])
+		post := pre.Add(net.Delta[k])
 		for _, m := range post {
-			trans[k].Out = append(trans[k].Out, pnml.Arc{Place: &places[m.Pl], Mult: m.Mult})
+			trans[k].Out = append(trans[k].Out, pnml.Arc{Place: &places[m.Pl], Mult: int(m.Mult)})
 		}
 	}
 	return pnml.Write(w, net.Name, places, trans)

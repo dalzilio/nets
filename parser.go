@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -196,7 +197,7 @@ func (p *parser) parseTR() error {
 			pindex := p.checkPL(tok.s)
 			hasarcs = true
 			tok = p.scan()
-			mult := 1
+			mult := int32(1)
 			ok := false
 			switch tok.tok {
 			case tokREAD:
@@ -207,7 +208,7 @@ func (p *parser) parseTR() error {
 				if err != nil {
 					return fmt.Errorf(" in multiplicity, %s (%s) at %s", tok.s, err, tok.pos.String())
 				}
-				p.net.Cond[index] = p.net.Cond[index].setifbigger(pindex, mult)
+				p.net.Cond[index] = p.net.Cond[index].updateIfGreater(pindex, mult)
 			case tokINHIBITOR:
 				if afterArrow {
 					return fmt.Errorf(" inhibitor arcs in outputs of transition at %s", tok.pos.String())
@@ -216,7 +217,7 @@ func (p *parser) parseTR() error {
 				if err != nil {
 					return fmt.Errorf(" in multiplicity, %s (%s) at %s", tok.s, err, tok.pos.String())
 				}
-				p.net.Inhib[index] = p.net.Inhib[index].setiflower(pindex, mult)
+				p.net.Inhib[index] = p.net.Inhib[index].updateIfLess(pindex, mult)
 			case tokSTAR:
 				mult, err = mconvert(tok.s)
 				if err != nil {
@@ -232,11 +233,11 @@ func (p *parser) parseTR() error {
 					p.unscan()
 				}
 				if afterArrow {
-					p.net.Delta[index] = p.net.Delta[index].add(pindex, mult)
+					p.net.Delta[index] = p.net.Delta[index].AddToPlace(pindex, mult)
 				} else {
-					p.net.Delta[index] = p.net.Delta[index].add(pindex, -mult)
-					p.net.Pre[index] = p.net.Pre[index].add(pindex, -mult)
-					p.net.Cond[index] = p.net.Cond[index].add(pindex, mult)
+					p.net.Delta[index] = p.net.Delta[index].AddToPlace(pindex, -mult)
+					p.net.Pre[index] = p.net.Pre[index].AddToPlace(pindex, -mult)
+					p.net.Cond[index] = p.net.Cond[index].AddToPlace(pindex, mult)
 				}
 			}
 		default:
@@ -275,7 +276,7 @@ func (p *parser) parsePL() error {
 				return fmt.Errorf(" in marking, %s (%s) at %s", tok.s, err, tok.pos.String())
 			}
 			hasinitm = true
-			p.net.Initial = p.net.Initial.add(index, plm)
+			p.net.Initial = p.net.Initial.AddToPlace(index, plm)
 		case tokARROW:
 			if afterArrow {
 				return fmt.Errorf(" cannot have two arrows (->) in pl declaration at %s", tok.pos.String())
@@ -289,7 +290,7 @@ func (p *parser) parsePL() error {
 			tindex := p.checkTR(tok.s)
 			hasarcs = true
 			tok = p.scan()
-			mult := 1
+			mult := int32(1)
 			ok := false
 			switch tok.tok {
 			case tokREAD:
@@ -300,7 +301,7 @@ func (p *parser) parsePL() error {
 				if err != nil {
 					return fmt.Errorf(" in multiplicity, %s (%s) at %s", tok.s, err, tok.pos.String())
 				}
-				p.net.Cond[tindex] = p.net.Cond[tindex].setifbigger(index, mult)
+				p.net.Cond[tindex] = p.net.Cond[tindex].updateIfGreater(index, mult)
 			case tokINHIBITOR:
 				if !afterArrow {
 					return fmt.Errorf(" inhibitor arcs in inputs of place at %s", tok.pos.String())
@@ -309,7 +310,7 @@ func (p *parser) parsePL() error {
 				if err != nil {
 					return fmt.Errorf(" in multiplicity, %s (%s) at %s", tok.s, err, tok.pos.String())
 				}
-				p.net.Inhib[tindex] = p.net.Inhib[tindex].setiflower(index, mult)
+				p.net.Inhib[tindex] = p.net.Inhib[tindex].updateIfLess(index, mult)
 			case tokSTAR:
 				mult, err = mconvert(tok.s)
 				if err != nil {
@@ -325,11 +326,11 @@ func (p *parser) parsePL() error {
 					p.unscan()
 				}
 				if afterArrow {
-					p.net.Delta[tindex] = p.net.Delta[tindex].add(index, -mult)
-					p.net.Pre[tindex] = p.net.Pre[tindex].add(index, -mult)
-					p.net.Cond[tindex] = p.net.Cond[tindex].add(index, mult)
+					p.net.Delta[tindex] = p.net.Delta[tindex].AddToPlace(index, -mult)
+					p.net.Pre[tindex] = p.net.Pre[tindex].AddToPlace(index, -mult)
+					p.net.Cond[tindex] = p.net.Cond[tindex].AddToPlace(index, mult)
 				} else {
-					p.net.Delta[tindex] = p.net.Delta[tindex].add(index, mult)
+					p.net.Delta[tindex] = p.net.Delta[tindex].AddToPlace(index, mult)
 				}
 			}
 		default:
@@ -468,17 +469,22 @@ func setMember(s []int, v int) int {
 // mconvert is used to convert values found on markings and weights into
 // integers. We take into account the possibility that s ends with a
 // "multiplier", such as `3K` (3000), which is valid in Tina.
-func mconvert(s string) (int, error) {
+func mconvert(s string) (int32, error) {
 	if len(s) == 0 {
 		return 0, errors.New("empty value in weights or marking")
 	}
-	v, err := strconv.Atoi(s)
+	iv, err := strconv.Atoi(s)
+
 	if err != nil {
 		if ch := s[len(s)-1]; ch == 'K' || ch == 'M' || ch == 'G' || ch == 'T' || ch == 'P' || ch == 'E' {
-			v, err = strconv.Atoi(s[:len(s)-1])
+			iv, err = strconv.Atoi(s[:len(s)-1])
 			if err != nil {
 				return 0, fmt.Errorf("not a valid weight or marking; %s", err)
 			}
+			if iv > math.MaxInt32 {
+				return 0, fmt.Errorf("overflow: max value is 2^31 (Int32.MaxValue); %v", s)
+			}
+			v := int32(iv)
 			switch ch {
 			case 'K':
 				return v * 1000, nil
@@ -487,15 +493,20 @@ func mconvert(s string) (int, error) {
 			case 'G':
 				return v * 1000000000, nil
 			case 'T':
-				return v * 1000000000000, nil
+				return v, fmt.Errorf("T multiplier is not supported: max marking or weight is 2^31 (Int32.MaxValue); %v", ch)
 			case 'P':
-				return v * 1000000000000000, nil
+				return v, fmt.Errorf("P multiplier is not supported: max marking or weight is 2^31 (Int32.MaxValue); %v", ch)
 			case 'E':
-				return v * 1000000000000000000, nil
+				return v, fmt.Errorf("E multiplier is not supported: max marking or weight is 2^31 (Int32.MaxValue); %v", ch)
 			default:
 				return v, fmt.Errorf("not a valid multiplier in weight or marking; %v", ch)
 			}
 		}
+	}
+
+	v := int32(iv)
+	if iv > math.MaxInt32 {
+		return v, fmt.Errorf("overflow: max value is 2^31 (Int32.MaxValue); %v", s)
 	}
 	return v, nil
 }
