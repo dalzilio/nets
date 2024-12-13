@@ -165,17 +165,25 @@ func (p *parser) parseTR() error {
 			} else {
 				tgc.Left.Bkind = BOPEN
 			}
-			tgc.Left.Value, err = strconv.Atoi(arr[1])
+			v1, err := strconv.Atoi(arr[1])
 			if err != nil {
 				return fmt.Errorf(" in timing interval, %s at %s", tok.s, tok.pos.String())
 			}
+			if (v1 < 0) || (v1 >= math.MaxUint32) {
+				return fmt.Errorf(" coefficient in time interval must be positive and less than 2^32, %s at %s", tok.s, tok.pos.String())
+			}
+			tgc.Left.Value = v1
 			if arr[2] == "w" {
 				tgc.Right.Bkind = BINFTY
 			} else {
-				tgc.Right.Value, err = strconv.Atoi(arr[2])
-				if (err != nil) || (tgc.Right.Value < tgc.Left.Value) {
+				v2, err := strconv.Atoi(arr[2])
+				if (err != nil) || (v2 < v1) {
 					return fmt.Errorf(" in timing interval, %s at %s", tok.s, tok.pos.String())
 				}
+				if (v2 < 0) || (v2 >= math.MaxUint32) {
+					return fmt.Errorf(" coefficient in time interval must be positive and less than 2^32, %s at %s", tok.s, tok.pos.String())
+				}
+				tgc.Right.Value = v2
 				if arr[3] == "[" {
 					tgc.Right.Bkind = BOPEN
 				} else {
@@ -197,7 +205,7 @@ func (p *parser) parseTR() error {
 			pindex := p.checkPL(tok.s)
 			hasarcs = true
 			tok = p.scan()
-			mult := int32(1)
+			mult := 1
 			ok := false
 			switch tok.tok {
 			case tokREAD:
@@ -290,7 +298,7 @@ func (p *parser) parsePL() error {
 			tindex := p.checkTR(tok.s)
 			hasarcs = true
 			tok = p.scan()
-			mult := int32(1)
+			mult := 1
 			ok := false
 			switch tok.tok {
 			case tokREAD:
@@ -469,7 +477,7 @@ func setMember(s []int, v int) int {
 // mconvert is used to convert values found on markings and weights into
 // integers. We take into account the possibility that s ends with a
 // "multiplier", such as `3K` (3000), which is valid in Tina.
-func mconvert(s string) (int32, error) {
+func mconvert(s string) (int, error) {
 	if len(s) == 0 {
 		return 0, errors.New("empty value in weights or marking")
 	}
@@ -484,7 +492,7 @@ func mconvert(s string) (int32, error) {
 			if iv > math.MaxInt32 {
 				return 0, fmt.Errorf("overflow: max value is 2^31 (Int32.MaxValue); %v", s)
 			}
-			v := int32(iv)
+			v := iv
 			switch ch {
 			case 'K':
 				return v * 1000, nil
@@ -493,18 +501,18 @@ func mconvert(s string) (int32, error) {
 			case 'G':
 				return v * 1000000000, nil
 			case 'T':
-				return v, fmt.Errorf("T multiplier is not supported: max marking or weight is 2^31 (Int32.MaxValue); %v", ch)
+				return v, fmt.Errorf("multiplier T is not supported: max marking or weight is 2^31 (Int32.MaxValue); %v", ch)
 			case 'P':
-				return v, fmt.Errorf("P multiplier is not supported: max marking or weight is 2^31 (Int32.MaxValue); %v", ch)
+				return v, fmt.Errorf("multiplier P is not supported: max marking or weight is 2^31 (Int32.MaxValue); %v", ch)
 			case 'E':
-				return v, fmt.Errorf("E multiplier is not supported: max marking or weight is 2^31 (Int32.MaxValue); %v", ch)
+				return v, fmt.Errorf("multiplier E is not supported: max marking or weight is 2^31 (Int32.MaxValue); %v", ch)
 			default:
 				return v, fmt.Errorf("not a valid multiplier in weight or marking; %v", ch)
 			}
 		}
 	}
 
-	v := int32(iv)
+	v := iv
 	if iv > math.MaxInt32 {
 		return v, fmt.Errorf("overflow: max value is 2^31 (Int32.MaxValue); %v", s)
 	}

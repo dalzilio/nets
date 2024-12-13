@@ -66,7 +66,7 @@ type Marking []Atom
 // these values overflow.
 type Atom struct {
 	Pl   int
-	Mult int32
+	Mult int
 }
 
 // Bkind is the type of possible time constraints bounds

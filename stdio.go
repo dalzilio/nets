@@ -14,13 +14,15 @@ import (
 // Mtoa converts a marking into a string
 func (net *Net) Mtoa(m Marking) string {
 	var buf bytes.Buffer
-	for _, v := range m {
+	for k, v := range m {
+		if k > 0 {
+			buf.WriteRune(' ')
+		}
 		buf.WriteString(net.Pl[v.Pl])
 		if v.Mult != 1 {
 			buf.WriteRune('*')
 			buf.WriteString(strconv.Itoa(int(v.Mult)))
 		}
-		buf.WriteRune(' ')
 	}
 	return buf.String()
 }

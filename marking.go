@@ -6,7 +6,7 @@ package nets
 
 // AddToPlace returns a new Marking obtained from m by adding mult tokens to
 // place pl.
-func (m Marking) AddToPlace(pl int, mult int32) Marking {
+func (m Marking) AddToPlace(pl int, mult int) Marking {
 	if mult == 0 {
 		return m
 	}
@@ -58,7 +58,7 @@ func (m Marking) Add(m2 Marking) Marking {
 
 // Get returns the multiplicity associated with place pl. The returned value is
 // 0 if pl is not in m.
-func (m *Marking) Get(pl int) int32 {
+func (m *Marking) Get(pl int) int {
 	if m == nil {
 		return 0
 	}
@@ -76,7 +76,7 @@ func (m *Marking) Get(pl int) int32 {
 // updateIfGreater returns the marking obtained from m by setting the
 // multiplicity of place pl to mul, but only if mul is greater than the marking
 // of pl in m. This is the least upper bound of m and the marking {pl : mul}
-func (m Marking) updateIfGreater(pl int, mul int32) Marking {
+func (m Marking) updateIfGreater(pl int, mul int) Marking {
 	if m == nil {
 		return Marking{Atom{pl, mul}}
 	}
@@ -97,7 +97,7 @@ func (m Marking) updateIfGreater(pl int, mul int32) Marking {
 // updateIfLess returns the marking obtained from m by setting the multiplicity
 // of place pl to mul, but only if mul is less than the marking of pl in m. This
 // is the greatest lower bound of m and the marking {pl : mul}
-func (m Marking) updateIfLess(pl int, mul int32) Marking {
+func (m Marking) updateIfLess(pl int, mul int) Marking {
 	if m == nil {
 		return Marking{Atom{pl, mul}}
 	}
