@@ -47,10 +47,10 @@ func (m Marking) Unique() (Handle, error) {
 	return Handle(unique.Make(buf.String())), nil
 }
 
-// Marking returns the marking associated with a markingKey
+// Marking returns the marking associated with a marking Handle
 func (mk Handle) Marking() Marking {
 	m := Marking{}
-	// We use the fact that places occuring in markingKey are in increasing
+	// We use the fact that places occuring in markings are in increasing
 	// order
 	s := []byte(mk.Value())
 	a := Atom{}

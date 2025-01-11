@@ -1,6 +1,6 @@
-// Copyright (c) 2021 Silvano DAL ZILIO
-//
-// GNU Affero GPL v3
+// Copyright 2025. Silvano DAL ZILIO. All rights reserved.
+// Use of this source code is governed by the AGPL license
+// that can be found in the LICENSE file.
 
 package nets
 
@@ -74,7 +74,7 @@ func (net *Net) Fprint(w io.Writer) {
 		if net.Tlabel[k] != "" {
 			fmt.Fprintf(w, ": %s ", net.Tlabel[k])
 		}
-		if !net.Time[k].trivial() {
+		if !net.Time[k].Trivial() {
 			fmt.Fprint(w, net.Time[k].String())
 		}
 		fmt.Fprint(w, net.printTransition(net.Cond[k],

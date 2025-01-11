@@ -1,6 +1,6 @@
-// Copyright (c) 2024 Silvano DAL ZILIO
-//
-// GNU Affero GPL v3
+// Copyright 2025. Silvano DAL ZILIO. All rights reserved.
+// Use of this source code is governed by the AGPL license
+// that can be found in the LICENSE file.
 
 package nets
 
@@ -54,6 +54,34 @@ func (m Marking) Add(m2 Marking) Marking {
 			k2++
 		}
 	}
+}
+
+// IsEnabled checks if transition t in the net is enabled for marking m, meaning
+// m is greater than the precondition for t (in net.Cond) and also less than the
+// inhibition/capacity constraints given in net.Inhib.
+func (net *Net) IsEnabled(m Marking, t int) bool {
+	for _, v := range net.Cond[t] {
+		if m.Get(v.Pl) < v.Mult {
+			return false
+		}
+	}
+	for _, v := range net.Inhib[t] {
+		if m.Get(v.Pl) >= v.Mult {
+			return false
+		}
+	}
+	return true
+}
+
+// AllEnabled returns the set of transitions (as an ordered slice of transition index) enabled for marking m.
+func (net *Net) AllEnabled(m Marking) []int {
+	enabled := []int{}
+	for t := range net.Tr {
+		if net.IsEnabled(m, t) {
+			enabled = append(enabled, t)
+		}
+	}
+	return enabled
 }
 
 // Get returns the multiplicity associated with place pl. The returned value is

@@ -1,3 +1,7 @@
+// Copyright 2025. Silvano DAL ZILIO. All rights reserved.
+// Use of this source code is governed by the AGPL license
+// that can be found in the LICENSE file.
+
 package nets
 
 import "testing"
