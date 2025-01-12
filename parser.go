@@ -169,8 +169,8 @@ func (p *parser) parseTR() error {
 			if err != nil {
 				return fmt.Errorf(" in timing interval, %s at %s", tok.s, tok.pos.String())
 			}
-			if (v1 < 0) || (v1 >= math.MaxUint32) {
-				return fmt.Errorf(" coefficient in time interval must be positive and less than 2^32, %s at %s", tok.s, tok.pos.String())
+			if (v1 < 0) || (v1 >= math.MaxInt32) {
+				return fmt.Errorf(" coefficient in time interval must be positive and less than 2^31, %s at %s", tok.s, tok.pos.String())
 			}
 			tgc.Left.Value = v1
 			if arr[2] == "w" {
@@ -180,8 +180,8 @@ func (p *parser) parseTR() error {
 				if (err != nil) || (v2 < v1) {
 					return fmt.Errorf(" in timing interval, %s at %s", tok.s, tok.pos.String())
 				}
-				if (v2 < 0) || (v2 >= math.MaxUint32) {
-					return fmt.Errorf(" coefficient in time interval must be positive and less than 2^32, %s at %s", tok.s, tok.pos.String())
+				if (v2 < 0) || (v2 >= math.MaxInt32) {
+					return fmt.Errorf(" coefficient in time interval must be positive and less than 2^31, %s at %s", tok.s, tok.pos.String())
 				}
 				tgc.Right.Value = v2
 				if arr[3] == "[" {

@@ -36,8 +36,8 @@ func (m Marking) Unique() (Handle, error) {
 		if v.Mult < 0 {
 			return Handle(unique.Make("")), fmt.Errorf("negative multiplicity")
 		}
-		if v.Mult > math.MaxUint32 {
-			return Handle(unique.Make("")), fmt.Errorf("negative multiplicity")
+		if v.Mult >= math.MaxInt32 {
+			return Handle(unique.Make("")), fmt.Errorf("multiplicity over MaxInt32")
 		}
 		binary.BigEndian.PutUint32(arr, uint32(v.Pl))
 		buf.Write(arr)
