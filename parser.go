@@ -76,7 +76,9 @@ func (p *parser) checkPL(s string) int {
 	return n
 }
 
-// checkTR returns the index of a transition in the net and creates one if necessary
+// checkTR returns the index of a transition in the net and creates one if
+// necessary. We make sure to initialize the time interval of transitions that
+// have no timing information.
 func (p *parser) checkTR(s string) int {
 	n, ok := p.tr[s]
 	if !ok {
@@ -84,7 +86,10 @@ func (p *parser) checkTR(s string) int {
 		p.tr[s] = n
 		p.net.Tr = append(p.net.Tr, s)
 		p.net.Tlabel = append(p.net.Tlabel, "")
-		p.net.Time = append(p.net.Time, TimeInterval{})
+		p.net.Time = append(p.net.Time, TimeInterval{
+			Left:  Bound{Bkind: BCLOSE, Value: 0},
+			Right: Bound{Bkind: BINFTY},
+		})
 		p.net.Cond = append(p.net.Cond, nil)
 		p.net.Inhib = append(p.net.Inhib, nil)
 		p.net.Pre = append(p.net.Pre, nil)
