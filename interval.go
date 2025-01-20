@@ -119,11 +119,8 @@ func BSubstract(b1, b2 Bound) Bound {
 
 // BAdd returns the sum of two time bounds.
 func BAdd(b1, b2 Bound) Bound {
-	if b1.Bkind == BINFTY {
-		return b1
-	}
-	if b2.Bkind == BINFTY {
-		return b1
+	if b1.Bkind == BINFTY || b2.Bkind == BINFTY {
+		return Bound{BINFTY, 0}
 	}
 	add := b1.Value + b2.Value
 	if b1.Bkind == BOPEN || b2.Bkind == BOPEN {
@@ -135,15 +132,15 @@ func BAdd(b1, b2 Bound) Bound {
 // BCompare returns an integer comparing two bounds. The result will be 0 if a
 // and b are equal, negative if a < b, and positive otherwise. We return the
 // difference between the bounds values, with some exceptions. We always return
-// -1 when b is infinite or when a and b have same values, but a is open whereas
+// +1 when b a infinite or when a and b have same values, but a is open whereas
 // b is closed. For intance, the bound [1,.. is considered strictly greater than
 // ]1,.. with our choice. We return -1 in the symetric cases.
 func BCompare(a, b Bound) int {
-	if b.Bkind == BINFTY {
-		return -1
-	}
 	if a.Bkind == BINFTY {
 		return +1
+	}
+	if b.Bkind == BINFTY {
+		return -1
 	}
 	if a.Value != b.Value {
 		return a.Value - b.Value
