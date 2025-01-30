@@ -68,8 +68,7 @@ func (v Place) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	if v.Label != "" {
 		e.EncodeElement(v.Name+": "+v.Label, xml.StartElement{Name: xml.Name{Local: "text"}})
 	} else {
-		e.EncodeElement(v.Name, xml.StartElement{Name: xml.Name{Local: "text"}})
-
+		e.EncodeElement("pl_"+v.Name, xml.StartElement{Name: xml.Name{Local: "text"}})
 	}
 	e.EncodeToken(xml.EndElement{Name: xml.Name{Local: "name"}})
 	if v.Init != 0 {
@@ -90,7 +89,7 @@ func (v Trans) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	if v.Label != "" {
 		e.EncodeElement(v.Name+": "+v.Label, xml.StartElement{Name: xml.Name{Local: "text"}})
 	} else {
-		e.EncodeElement(v.Name, xml.StartElement{Name: xml.Name{Local: "text"}})
+		e.EncodeElement("tr_"+v.Name, xml.StartElement{Name: xml.Name{Local: "text"}})
 
 	}
 	e.EncodeToken(xml.EndElement{Name: xml.Name{Local: "name"}})
